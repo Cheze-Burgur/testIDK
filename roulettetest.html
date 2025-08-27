@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roulette</title>
+  <link rel="icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSzq3TL-S4zQ-FxBEbuy_IcaW9XoexPk-b9Fg&s">
+  <style>
+    :root {
+      --wheel-size: 300px;
+      --wheel-border: 10px;
+      --ball-size: 20px;
+      /* 150 - 10 - 10 = 130px orbit radius */
+      --orbit-radius: calc(var(--wheel-size) / 2 - var(--wheel-border) - var(--ball-size) / 2);
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      background-attachment: fixed;
+      background: linear-gradient(to bottom, #244b6d 0%, #1a2c40 100%);
+      color: #f5deb3;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+    }
+
+    h1 {
+      color: #2dd4bf;
+      margin: 0;
+      margin-bottom: 10px;
+    }
+
+    .wheel {
+      width: var(--wheel-size);
+      height: var(--wheel-size);
+      border-radius: 50%;
+      border: var(--wheel-border) solid #444;
+      background: conic-gradient(red 0deg 9.73deg,
+          black 9.73deg 19.46deg,
+          red 19.46deg 29.19deg,
+          black 29.19deg 38.92deg,
+          red 38.92deg 48.65deg,
+          black 48.65deg 58.38deg,
+          red 58.38deg 68.11deg,
+          black 68.11deg 77.84deg,
+          red 77.84deg 87.57deg,
+          black 87.57deg 97.3deg,
+          red 97.3deg 107.03deg,
+          black 107.03deg 116.76deg,
+          red 116.76deg 126.49deg,
+          black 126.49deg 136.22deg,
+          red 136.22deg 145.95deg,
+          black 145.95deg 155.68deg,
+          red 155.68deg 165.41deg,
+          black 165.41deg 175.14deg,
+          green 175.14deg 185.87deg,
+          red 185.87deg 195.6deg,
+          black 195.6deg 205.33deg,
+          red 205.33deg 215.06deg,
+          black 215.06deg 224.79deg,
+          red 224.79deg 234.52deg,
+          black 234.52deg 244.25deg,
+          red 244.25deg 253.98deg,
+          black 253.98deg 263.71deg,
+          red 263.71deg 273.44deg,
+          black 273.44deg 283.17deg,
+          red 283.17deg 292.9deg,
+          black 292.9deg 302.63deg,
+          red 302.63deg 312.36deg,
+          black 312.36deg 322.09deg,
+          red 322.09deg 331.82deg,
+          black 331.82deg 341.55deg,
+          red 341.55deg 351.28deg,
+          black 351.28deg 360deg);
+      position: relative;
+      /* anchor orbit to center */
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, .5), 0 10px 40px rgba(0, 0, 0, .45);
+    }
+
+    /* Center pin / marker (purely visual) */
+    .pin {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      background: #111;
+      border: 2px solid #d1d5db;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      box-shadow: 0 0 10px rgba(255, 255, 255, .25);
+    }
+
+    /* Orbit wrapper: sits at the exact center and rotates */
+    .orbit {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      /* rotation around a point */
+      transform: translate(-50%, -50%) rotate(0deg);
+      transform-origin: 0 0;
+      /* rotate around center point */
+      transition: transform 5s cubic-bezier(.17, .67, .83, .67);
+      z-index: 1;
+    }
+
+    /* Ball is offset from the center along the X axis by the orbit radius */
+    .ball {
+      position: absolute;
+      width: var(--ball-size);
+      height: var(--ball-size);
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fff, #ccc);
+      transform: translate(var(--orbit-radius));
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+    }
+
+    .controls {
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    input,
+    select,
+    button {
+
+      padding: 10px;
+      border-radius: 6px;
+      border: none;
+      font-size: 16px;
+    }
+
+    button {
+      background: #222;
+      border: 2px solid #f5f5f5;
+      color: #f5f5f5;
+      padding: 12px 20px;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin: 10px;
+    }
+
+    button:hover {
+      background: #444;
+      border-color: #ff0;
+      box-shadow: 0 0 8px #ff0;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .result {
+      font-size: 18px;
+      min-height: 24px;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 1.4rem;
+      text-shadow: 0 0 5px #000;
+    }
+
+    #bank,
+    #bet {
+      font-weight: bold;
+      color: rgb(0, 255, 0);
+      /* like casino LED display */
+    }
+
+    #bet {
+      background-color: #1a2c40;
+      border: #ffffff 2px solid;
+    }
+
+    #betType {
+      border: #ffffff 2px solid;
+      background-color: #1a2c40;
+      color: #f5f5f5;
+    }
+
+    .bankroll {
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Roulette</h1>
+  <div class="container">
+    <div class="wheel" id="wheel">
+      <div class="pin"></div>
+      <div class="orbit" id="orbit">
+        <div class="ball" id="ball"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="row">
+        <label for="betType">Bet on:</label>
+        <select id="betType">
+          <option value="red">Red</option>
+          <option value="black">Black</option>
+          <option value="green">Green (0)</option>
+          <option value="odd">Odd</option>
+          <option value="even">Even</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="bet">Bet amount:</label>
+        <input id="bet" type="number" min="1" step="1" value="25">
+        <button id="spinBtn">Spin</button>
+      </div>
+      <div class="bankroll">Bankroll: $<span id="bank">1000</span></div>
+      <div id="result" class="result"></div>
+    </div>
+  </div>
+
+  <script>
+    const orbit = document.getElementById("orbit");
+    const spinBtn = document.getElementById("spinBtn");
+    const resultEl = document.getElementById("result");
+    const bankEl = document.getElementById("bank");
+    const betEl = document.getElementById("bet");
+    const betTypeEl = document.getElementById("betType");
+
+    let bankroll = 1000;
+
+    function spin() {
+      const bet = Math.floor(+betEl.value || 0);
+      if (bet <= 0 || bet > bankroll) {
+        resultEl.textContent = "Invalid bet.";
+        return;
+      }
+
+      bankroll -= bet;
+      bankEl.textContent = bankroll;
+
+      // 4–6 spins worth of rotation
+      const spinDegrees = Math.floor(1440 + Math.random() * 720 + Math.random() * 360);
+      orbit.style.transition = "transform 5s cubic-bezier(.17,.67,.83,.67)";
+      orbit.style.transform = `translate(-50%, -50%) rotate(${spinDegrees}deg)`;
+      spinBtn.disabled = true;
+      bet.disabled = true;
+
+      setTimeout(() => {
+        const landedDeg = spinDegrees % 360;
+        // simple 0–36 mapping around the wheel
+        const number = Math.floor(landedDeg / (360 / 37));
+        let color;
+        if (number === 0) color = "green";
+        else if ([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36].includes(number)) color = "red";
+        else color = "black";
+
+        let win = false;
+        if (betTypeEl.value === color) win = true;
+        if (betTypeEl.value === "odd" && number % 2 === 1 && number !== 0) win = true;
+        if (betTypeEl.value === "even" && number % 2 === 0 && number !== 0) win = true;
+
+        let payout = 0;
+        if (win) {
+          payout = betTypeEl.value === "green" ? bet * 14 : bet * 2; // 14:1 for 0, 1:1 otherwise
+          bankroll += payout;
+          resultEl.textContent = `Number: ${number} (${color.toUpperCase()}). You win $${payout - bet}!`;
+        } else {
+          resultEl.textContent = `Number: ${number} (${color.toUpperCase()}). You lose $${bet}.`;
+        }
+
+        bankEl.textContent = bankroll;
+        spinBtn.disabled = false;
+      }, 5000);
+    }
+
+    spinBtn.addEventListener("click", spin);
+  </script>
+</body>
+
+</html>
